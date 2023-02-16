@@ -1,6 +1,6 @@
 from typing import List
 from review import Review
-
+from game_db import game_exists
 
 class User():
     """
@@ -13,18 +13,25 @@ class User():
         self.email = email
         self.reviews: List[Review] = []
 
-
-    def fetchReviewList(self):
+    def fetchReviewsAsDict(self) -> List[dict]:
         """
-        Get all the movies the user has ever rated
+        Get all the movies the user has ever rated as a dictionary
         """
-        return self.reviews
+        return [review.get_review_as_dict() for review in self.reviews]
 
-    def addReview(self, review: Review):
+    def addReview(self, game_id: int, rating: int, comment: str):
         """
         Add a new review to the User's global list
         """
-        if review.get_film() in [review.get_film() for review in self.reviews]:
-            print(f"Could not add review to {self.username}'s " +
-                  "list: already reviewed")
+        # Check the user hasn't already reviewed this game
+        game_already_reviewed = next((True for existing_review in self.reviews if game_id == existing_review.get_game_id()), False)
+        if game_already_reviewed:
+            return {"status": "error", "code": "game_already_reviewed"}
+
+        if not game_exists(game_id):
+            return {"status": "error", "code": "invalid_game_id"}
+
+        review: Review = Review(game_id, rating, comment)
         self.reviews.append(review)
+
+        return {"status": "success"}
