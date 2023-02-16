@@ -8,10 +8,13 @@ from flask import Flask, request
 import auth
 import database
 
+from database import Database
+
 from user import User
 
 
 app = Flask(__name__)
+db = Database()
 
 
 @app.route("/auth/register", methods=["POST"])

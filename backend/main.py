@@ -5,19 +5,21 @@ import database as db
 from user import User
 from review import Review
 
+from database import Database
 
 def main():
     # Initialise a blank database
+    database = Database()
 
     # Register our first user
     callum = User("callum_jones", "fuck1", "callum.o.jones@protonmail.com")
-    print(db.register_user(callum))
+    print(db.register_new_user(callum))
     callum = User("callum_jones", "fuck123123", "callum.o.jones+2@protonmail.com")
-    print(db.register_user(callum))
+    print(db.register_new_user(callum))
     callum = User("callum_jones123", "fuck123123", "callum.o.jones@protonmail.com")
-    print(db.register_user(callum))
+    print(db.register_new_user(callum))
     callum = User("callum_jones123", "fuck123123", "callum.o.jones+2@protonmail.com")
-    print(db.register_user(callum))
+    print(db.register_new_user(callum))
 
     # Now let's give our user some reviews
     callum_review_eeaao = Review(545611, 10, "Sometimes nothing is everything")
