@@ -61,44 +61,44 @@ def logout() -> Dict:
     logout_res = auth_manager.logout_user(logout_details["token"])
     return logout_res
 
-@app.route("/user/<username>/get_reviews")
-def get_reviews(username: str) -> Dict:
-    target_usr = database.find_user_by_name(username)
-    if target_usr is None:
-        return {"error": "user_does_not_exist"}
+# @app.route("/user/<username>/get_reviews")
+# def get_reviews(username: str) -> Dict:
+#     target_usr = database.find_user_by_name(username)
+#     if target_usr is None:
+#         return {"error": "user_does_not_exist"}
 
-    reviews = target_usr.fetchReviewsAsDict()
-    return {"user": username, "reviews": reviews}
+#     reviews = target_usr.fetchReviewsAsDict()
+#     return {"user": username, "reviews": reviews}
 
 
-@app.route("/user/add_review", methods=["POST"])
-def add_review():
-    add_review_details: Optional[dict] = request.json
-    if add_review_details is None:
-        return {"error": "pray"}, 400
+# @app.route("/user/add_review", methods=["POST"])
+# def add_review():
+#     add_review_details: Optional[dict] = request.json
+#     if add_review_details is None:
+#         return {"error": "pray"}, 400
 
-    if "token" not in add_review_details:
-        return {"status": "error", "code": "missing_token"}, 400
+#     if "token" not in add_review_details:
+#         return {"status": "error", "code": "missing_token"}, 400
 
-    if "game_id" not in add_review_details:
-        return {"status": "error", "code": "missing_game_id"}, 400
+#     if "game_id" not in add_review_details:
+#         return {"status": "error", "code": "missing_game_id"}, 400
 
-    if "rating" not in add_review_details:
-        return {"status": "error", "code": "missing_rating"}, 400
+#     if "rating" not in add_review_details:
+#         return {"status": "error", "code": "missing_rating"}, 400
 
-    if "comment" not in add_review_details:
-        return {"status": "error", "code": "missing_comment"}, 400
+#     if "comment" not in add_review_details:
+#         return {"status": "error", "code": "missing_comment"}, 400
 
-    user: Optional[User] = database.lookup_token_user(add_review_details["token"])
-    if user is None:
-        return {"status": "error", "code": "invalid_token"}, 400
+#     user: Optional[User] = database.lookup_token_user(add_review_details["token"])
+#     if user is None:
+#         return {"status": "error", "code": "invalid_token"}, 400
 
-    response = user.addReview(add_review_details["game_id"],
-                              add_review_details["rating"],
-                              add_review_details["comment"])
+#     response = user.addReview(add_review_details["game_id"],
+#                               add_review_details["rating"],
+#                               add_review_details["comment"])
 
-    if response["status"] == "error":
-        return response, 400
-    else:
-        return response
+#     if response["status"] == "error":
+#         return response, 400
+#     else:
+#         return response
 

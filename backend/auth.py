@@ -11,7 +11,13 @@ class AuthHandler():
 
     def register_user(self, username: str, password: str, email: str):
         new_user = User(username, password, email)
-        print(f"Registered new user with username {username}")
+
+        if self.db.get_user_by_name(username) is not None:
+            return {"status": "error", "code": "username_already_registered"}
+
+        if self.db.get_user_by_email(email) is not None:
+            return {"status": "error", "code": "email_already_registered"}
+
         self.db.register_new_user(new_user)
 
         return {"status": "success"}
@@ -19,7 +25,7 @@ class AuthHandler():
 
     def login_user(self, username: str, password: str):
         """Given a username/pass combo, try to authenticate the given user"""
-        target_user = self.db.find_user_by_name(username)
+        target_user = self.db.get_user_by_name(username)
         if target_user is None:
             return {"status": "error", "code": "user_does_not_exist"}
 

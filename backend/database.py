@@ -63,56 +63,84 @@ class Database:
 # ======================== User DB Functions =================================
 
     def register_new_user(self, user: User):
-        cursor = self.startup_new_connection()
         """Register a new user"""
+        cursor = self.startup_new_connection()
         new_usr_cmd = """
             INSERT INTO Users
             VALUES (?, ?)
         """
 
         cursor.execute(new_usr_cmd, (user.username, user.email))
-        return {"status": "success"}
+        cursor.connection.commit()
 
     def get_user_by_name(self, username: str):
         """Look up a user in the DB by username. Returns None if no user exists"""
         cursor = self.startup_new_connection()
         usr_lookup_cmd = """
-        SELECT username
+        SELECT *
         FROM Users
         WHERE username = ?
         """
-        user_data = cursor.execute(usr_lookup_cmd, (username,)).fetchall()
-        print(user_data)
+        user_data = cursor.execute(usr_lookup_cmd, (username,)).fetchone()
+        if user_data is not None:
+            # FIXME
+            usr = User(user_data[0], "tmp", user_data[1])
+            return usr
+        else:
+            return None
 
-    def find_user_by_email(email: str):
-        """Look up a user in the DB by email. Returns None if no user exists"""
-        return next((user for user in users_db
-                        if user.email == email), None)
+    def get_user_by_email(self, email: str):
+        """Look up a user in the DB by username. Returns None if no user exists"""
+        cursor = self.startup_new_connection()
+        usr_lookup_cmd = """
+        SELECT *
+        FROM Users
+        WHERE email = ?
+        """
+        user_data = cursor.execute(usr_lookup_cmd, (email,)).fetchone()
+        if user_data is not None:
+            # FIXME
+            usr = User(user_data[0], "tmp", user_data[1])
+            return usr
+        else:
+            return None
 
-    # TODO
     def update_user_object(self, user: User):
+        # TODO
         pass
 
-# ======================== Session DB Functions ============================
+# # ======================== Session DB Functions ============================
 
-def add_token_entry(user: User, usr_token: str):
-    authenticated_sessions.append(Session(usr_token, user))
+    def add_session(self, username: str, usr_token: str):
+        """Authenticate a new token for a particular user"""
+        cursor = self.startup_new_connection()
+        new_session_cmd = """
+            INSERT INTO AuthenticatedSessions(username, token)
+            VALUES (?, ?)
+        """
 
-def session_exists(usr_token: str):
-    return next((True for session in authenticated_sessions if
-                 session.usr_token == usr_token), False)
+        cursor.execute(new_session_cmd, (username, usr_token))
+        cursor.connection.commit()
 
-def lookup_user_token(username: str) -> Optional[str]:
-    # TODO fix nested lookups
-    return next((session.usr_token for session in authenticated_sessions if
-                 session.user.username == username), None)
 
-def lookup_token_user(usr_token: str) -> Union[User, None]:
-    return next((session.user for session in authenticated_sessions if
-          session.usr_token == usr_token), None)
+# def add_token_entry(user: User, usr_token: str):
+#     authenticated_sessions.append(Session(usr_token, user))
 
-def remove_session(usr_token: str):
-    for session in authenticated_sessions:
-        if session.usr_token == usr_token:
-            authenticated_sessions.remove(session)
+# def session_exists(usr_token: str):
+#     return next((True for session in authenticated_sessions if
+#                  session.usr_token == usr_token), False)
+
+# def lookup_user_token(username: str) -> Optional[str]:
+#     # TODO fix nested lookups
+#     return next((session.usr_token for session in authenticated_sessions if
+#                  session.user.username == username), None)
+
+# def lookup_token_user(usr_token: str) -> Union[User, None]:
+#     return next((session.user for session in authenticated_sessions if
+#           session.usr_token == usr_token), None)
+
+# def remove_session(usr_token: str):
+#     for session in authenticated_sessions:
+#         if session.usr_token == usr_token:
+#             authenticated_sessions.remove(session)
 
