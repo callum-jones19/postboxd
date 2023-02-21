@@ -5,9 +5,7 @@ Class to handle the API of the server
 from typing import Dict, Optional
 from flask import Flask, request
 
-import auth
-import database
-
+from auth import AuthHandler
 from database import Database
 
 from user import User
@@ -15,6 +13,7 @@ from user import User
 
 app = Flask(__name__)
 db = Database()
+auth_manager = AuthHandler(db)
 
 
 @app.route("/auth/register", methods=["POST"])
@@ -30,7 +29,7 @@ def register() -> Dict:
     if "email" not in register_details:
         return {"error": "missing_email_field"}
 
-    auth_res = auth.register_user(register_details["username"],
+    auth_res = auth_manager.register_user(register_details["username"],
                        register_details["password"], register_details["email"])
 
     return auth_res
@@ -47,7 +46,7 @@ def login() -> Dict:
     if "password" not in login_details:
         return {"error": "missing_pwd_field"}
 
-    login_res = auth.login_user(login_details["username"], login_details["password"])
+    login_res = auth_manager.login_user(login_details["username"], login_details["password"])
     return login_res
 
 @app.route("/auth/logout", methods=["POST"])
@@ -59,7 +58,7 @@ def logout() -> Dict:
     if "token" not in logout_details:
         return {"error": "missing_token"}
 
-    logout_res = auth.logout_user(logout_details["token"])
+    logout_res = auth_manager.logout_user(logout_details["token"])
     return logout_res
 
 @app.route("/user/<username>/get_reviews")
