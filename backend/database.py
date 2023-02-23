@@ -8,13 +8,17 @@ from session import Session
 
 class Database:
 
+    # TODO improve username datatype
+
     def __init__(self) -> None:
         # Generate tables if any do not exist
         self.generate_user_table()
+        self.generate_passwords_table()
         self.generate_sessions_table()
         self.generate_reviews_table()
 
 # ======================== SQL DB Functions =================================
+
 
     def startup_new_connection(self):
         con = sqlite3.connect("./../database/postboxd.db")
@@ -22,6 +26,34 @@ class Database:
 
         return cursor
 
+    def reset_tables(self):
+        cursor = self.startup_new_connection()
+        reset_cmd = """
+            DROP TABLE Users
+        """
+        cursor.execute(reset_cmd)
+
+        reset_cmd = """
+            DROP TABLE AuthenticatedSessions
+        """
+        cursor.execute(reset_cmd)
+
+        reset_cmd = """
+            DROP TABLE Reviews
+        """
+        cursor.execute(reset_cmd)
+
+        pwd_cmd = """
+            DROP TABLE Passwords
+        """
+        cursor.execute(pwd_cmd)
+
+        self.generate_user_table()
+        self.generate_passwords_table()
+        self.generate_reviews_table()
+        self.generate_sessions_table()
+
+        cursor.connection.close()
 
     def generate_user_table(self):
         cursor = self.startup_new_connection()
@@ -32,6 +64,19 @@ class Database:
             )
         """
         cursor.execute(user_table_cmd)
+        cursor.connection.close()
+
+    def generate_passwords_table(self):
+        cursor = self.startup_new_connection()
+        pwd_cmd = """
+            CREATE TABLE IF NOT EXISTS Passwords (
+                username varchar(20) REFERENCES Users(username),
+                password_hash varchar(80) NOT NULL,
+                password_salt varchar(20) NOT NULL,
+                PRIMARY KEY(username)
+            )
+        """
+        cursor.execute(pwd_cmd)
         cursor.connection.close()
 
     def generate_sessions_table(self):
@@ -69,12 +114,39 @@ class Database:
             INSERT INTO Users
             VALUES (?, ?)
         """
-
         cursor.execute(new_usr_cmd, (user.username, user.email))
         cursor.connection.commit()
 
+    def register_new_password(self, username: str, password_hashed: str,
+                              password_salt: str):
+        """Record authentication data to the password table"""
+        cursor = self.startup_new_connection()
+        new_pwd_cmd = """
+            INSERT INTO Passwords
+            VALUES (?, ?, ?)
+        """
+        cursor.execute(new_pwd_cmd, (username, password_hashed, password_salt))
+        cursor.connection.commit()
+
+    def get_user_password(self, username: str):
+        """Get the salt and hash of a user password"""
+        cursor = self.startup_new_connection()
+        get_pwd_cmd = """
+            SELECT password_hash, password_salt
+            FROM Passwords
+            WHERE username = ?
+        """
+        password_data = cursor.execute(get_pwd_cmd, (username,)).fetchone()
+        if password_data is None:
+            return None
+        else:
+            return {"password_hash": password_data[0],
+                    "password_salt": password_data[1]}
+
     def get_user_by_name(self, username: str):
-        """Look up a user in the DB by username. Returns None if no user exists"""
+        """Look up a user in the DB by username.
+        Returns None if no user exists
+        """
         cursor = self.startup_new_connection()
         usr_lookup_cmd = """
         SELECT *
@@ -83,14 +155,15 @@ class Database:
         """
         user_data = cursor.execute(usr_lookup_cmd, (username,)).fetchone()
         if user_data is not None:
-            # FIXME
-            usr = User(user_data[0], "tmp", user_data[1])
+            usr = User(user_data[0], user_data[1])
             return usr
         else:
             return None
 
     def get_user_by_email(self, email: str):
-        """Look up a user in the DB by username. Returns None if no user exists"""
+        """Look up a user in the DB by username.
+        Returns None if no user exists
+        """
         cursor = self.startup_new_connection()
         usr_lookup_cmd = """
         SELECT *
@@ -100,7 +173,7 @@ class Database:
         user_data = cursor.execute(usr_lookup_cmd, (email,)).fetchone()
         if user_data is not None:
             # FIXME
-            usr = User(user_data[0], "tmp", user_data[1])
+            usr = User(user_data[0], user_data[1])
             return usr
         else:
             return None
