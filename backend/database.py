@@ -178,11 +178,10 @@ class Database:
         else:
             return None
 
-    def update_user_object(self, user: User):
-        # TODO
-        pass
-
 # # ======================== Session DB Functions ============================
+
+    # FIXME optimise with JOIN statements, instead of making
+    # multiple queries to multiple tables.
 
     def add_session(self, username: str, usr_token: str):
         """Authenticate a new token for a particular user"""
@@ -192,8 +191,26 @@ class Database:
             VALUES (?, ?)
         """
 
-        cursor.execute(new_session_cmd, (username, usr_token))
+        cursor.execute(new_session_cmd, (username, usr_token,))
         cursor.connection.commit()
+
+    def get_usr_by_token(self, token: str):
+        """Given a token, look up to see if a user has an authenticated session
+        for that
+        """
+        cursor = self.startup_new_connection()
+        get_usr_cmd = """
+            SELECT *
+            FROM AuthenticatedSessions
+            WHERE token = ?
+        """
+        session_data = cursor.execute(get_usr_cmd, (token, )).fetchone()
+        if session_data is None:
+            return None
+        else:
+            username = session_data[0]
+            user = self.get_user_by_name(username)
+            return user
 
 
 # def add_token_entry(user: User, usr_token: str):

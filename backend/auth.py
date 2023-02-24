@@ -53,13 +53,13 @@ class AuthHandler():
         if hashed_pwd != pwd_data["password_hash"]:
             return {"status": "error", "code": "incorrect_password"}
 
-        # if self.db.lookup_user_token(username) is not None:
-        #     return {"status": "error", "code": "user_already_logged_in"}
+        if self.db.get_usr_by_token(username) is not None:
+            return {"status": "error", "code": "user_already_logged_in"}
 
         # Generate login token for this user
-        # token = secrets.token_urlsafe()
-        # self.db.add_token_entry(target_user, token)
-        return {"status": "success", "token": "tmp"}
+        token = secrets.token_urlsafe()
+        self.db.add_session(username, token)
+        return {"status": "success", "token": token}
 
 
     def logout_user(self, usr_token: str):

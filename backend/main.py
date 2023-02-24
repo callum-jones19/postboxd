@@ -16,21 +16,29 @@ def main() -> None:
     database = Database()
     auth = AuthHandler(database)
 
-    res = (auth.register_user("callum_jonessad222",
-                              "fuck1",
-                              "callasdumasd.o.jones@protonmail.com"))
-    print(res)
-    print(auth.register_user("callum_jones",
-                             "fuck123123",
-                             "callum.o.jones+2@protonmail.com"))
-    sleep(5)
-    callum = User("callum_jones123", "fuck123123", "callum.o.jones@protonmail.com")
-    print(database.register_new_user(callum))
-    callum = User("callum_jones123", "fuck123123", "callum.o.jones+2@protonmail.com")
-    sleep(5)
-    print(database.register_new_user(callum))
+    database.reset_tables()
 
-    database.get_user_by_name("callum_jones")
+    print(auth.register_user("callum_jonessad222",
+                       "fuck1",
+                       "callasdumasd.o.jones@protonmail.com"))
+    print(auth.register_user("callum_jones",
+                       "fuck123123",
+                       "callum.o.jones+2@protonmail.com"))
+    print(auth.register_user("callum_jones123",
+                       "fuck123123",
+                       "callum.o.jones@protonmail.com"))
+    print(auth.register_user("callum_jones",
+                       "fuck123123",
+                       "callum.o.jones+2@protonmail.com"))
+    print(auth.register_user("callum_jonessad222das",
+                       "fuck1",
+                       "callasdumasd.o.jones@protonmail.com"))
+
+    print(auth.login_user("callum_jones", "test_wrong"))
+    data = auth.login_user("callum_jones", "fuck123123")
+    token = data["token"]
+
+    print(database.get_usr_by_token(token))
 
     # # Now let's give our user some reviews
     # callum_review_eeaao = Review(545611, 10, "Sometimes nothing is everything")

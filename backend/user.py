@@ -12,6 +12,9 @@ class User():
         self.email = email
         self.reviews: List[Review] = []
 
+    def __str__(self) -> str:
+        return f"Username: {self.username}, Email: {self.email}, Reviews: {self.reviews}"
+
     def fetchReviewsAsDict(self) -> List[dict]:
         """
         Get all the movies the user has ever rated as a dictionary
