@@ -103,7 +103,19 @@ class Database:
         """
         cursor.execute(reviews_table_cmd)
 
+# ======================== Review DB Functions =================================
 
+    def create_new_review(self, username: str, game_id: int, rating: int,
+                          comment: str):
+        """Register a new review in the database"""
+        cursor = self.startup_new_connection()
+        new_review_cmd = """
+            INSERT INTO Reviews
+            VALUES (?, ?, ?, ?)
+        """
+        cursor.execute(new_review_cmd, (username, game_id, rating, comment))
+        cursor.connection.commit()
+        cursor.connection.close()
 
 # ======================== User DB Functions =================================
 
@@ -116,6 +128,7 @@ class Database:
         """
         cursor.execute(new_usr_cmd, (user.username, user.email))
         cursor.connection.commit()
+        cursor.connection.close()
 
     def register_new_password(self, username: str, password_hashed: str,
                               password_salt: str):
@@ -127,6 +140,7 @@ class Database:
         """
         cursor.execute(new_pwd_cmd, (username, password_hashed, password_salt))
         cursor.connection.commit()
+        cursor.connection.close()
 
     def get_user_password(self, username: str):
         """Get the salt and hash of a user password"""
@@ -142,6 +156,7 @@ class Database:
         else:
             return {"password_hash": password_data[0],
                     "password_salt": password_data[1]}
+        cursor.connection.close()
 
     def get_user_by_name(self, username: str):
         """Look up a user in the DB by username.
@@ -159,6 +174,7 @@ class Database:
             return usr
         else:
             return None
+        cursor.connection.close()
 
     def get_user_by_email(self, email: str):
         """Look up a user in the DB by username.
@@ -174,8 +190,10 @@ class Database:
         if user_data is not None:
             # FIXME
             usr = User(user_data[0], user_data[1])
+            cursor.connection.close()
             return usr
         else:
+            cursor.connection.close()
             return None
 
 # # ======================== Session DB Functions ============================
@@ -193,6 +211,7 @@ class Database:
 
         cursor.execute(new_session_cmd, (username, usr_token,))
         cursor.connection.commit()
+        cursor.connection.close()
 
     def get_usr_by_token(self, token: str):
         """Given a token, look up to see if a user has an authenticated session
@@ -206,10 +225,12 @@ class Database:
         """
         session_data = cursor.execute(get_usr_cmd, (token, )).fetchone()
         if session_data is None:
+            cursor.connection.close()
             return None
         else:
             username = session_data[0]
             user = self.get_user_by_name(username)
+            cursor.connection.close()
             return user
 
 
