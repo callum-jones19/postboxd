@@ -1,6 +1,6 @@
 from typing import List
 from review import Review
-from game_db import game_exists
+from frontend.src.game_db import game_exists
 
 class User():
     """
@@ -25,6 +25,10 @@ class User():
         """
         Add a new review to the User's global list
         """
+        # Validate game id
+        if game_id < 0:
+            return {"status": "error", "code": "invalid_game_id"}
+
         # Check the user hasn't already reviewed this game
         game_already_reviewed = next((True for existing_review in self.reviews if game_id == existing_review.get_game_id()), False)
         if game_already_reviewed:
