@@ -21,24 +21,31 @@ def main() -> None:
     print(auth.register_user("callum_jonessad222",
                        "fuck1",
                        "callasdumasd.o.jones@protonmail.com"))
+    print(database.users_cache)
     print(auth.register_user("callum_jones",
                        "fuck123123",
                        "callum.o.jones+2@protonmail.com"))
+    print(database.users_cache)
     print(auth.register_user("callum_jones123",
                        "fuck123123",
                        "callum.o.jones@protonmail.com"))
+    print(database.users_cache)
     print(auth.register_user("callum_jones",
                        "fuck123123",
                        "callum.o.jones+2@protonmail.com"))
+    print(database.users_cache)
     print(auth.register_user("callum_jonessad222das",
                        "fuck1",
                        "callasdumasd.o.jones@protonmail.com"))
 
+    print(database.users_cache)
     print(auth.login_user("callum_jones", "test_wrong"))
     data = auth.login_user("callum_jones", "fuck123123")
     token = data["token"]
 
     print(database.get_usr_by_token(token))
+    user = database.get_usr_by_token(token)
+    print(database.users_cache)
 
     # # Now let's give our user some reviews
     # callum_review_eeaao = Review(545611, 10, "Sometimes nothing is everything")
