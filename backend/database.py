@@ -17,6 +17,21 @@ class Database:
         self.generate_sessions_table()
         self.generate_reviews_table()
 
+        # Caches
+        """
+        These caches exist to allow us to keep our local variables synchronised
+        with the database without excessive coupling between all the data
+        types. When a cacheable datatype is fetched from the DB, we store
+        it here. Every X seconds, everything in the caches are pushed to the
+        DB and then the cache is cleared. This allows for low coupling but
+        prevents us from using excessive local memory to handle high user
+        loads (I wish haha)
+        """
+        # FIXME - can add the same user multiple times. Not necessarily an
+        # immediate problem, but is a waste of resources an should be fixed
+        self.users_cache: List[User] = []
+
+
 # ======================== SQL DB Functions =================================
 
 
@@ -103,6 +118,22 @@ class Database:
         """
         cursor.execute(reviews_table_cmd)
 
+# ===================== Cache Handling Functions ==============================
+
+    def update_from_caches(self):
+        for user in self.users_cache:
+            # Update all of the users' reviews into the DB
+            for review in user.reviews:
+                self.create_new_review(user.username, review.game_id,
+                                       review.rating, review.comment)
+
+            # Now update the email
+            self.update_user(user)
+
+        # And now remove from the Cache
+        self.users_cache.clear()
+
+
 # ======================== Review DB Functions =================================
 
     def create_new_review(self, username: str, game_id: int, rating: int,
@@ -110,10 +141,13 @@ class Database:
         """Register a new review in the database"""
         cursor = self.startup_new_connection()
         new_review_cmd = """
-            INSERT INTO Reviews
+            INSERT INTO Reviews (username, game_id, rating, comment)
             VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY
+            UPDATE rating=?, comment=?
         """
-        cursor.execute(new_review_cmd, (username, game_id, rating, comment))
+        cursor.execute(new_review_cmd, (username, game_id, rating, comment,
+                                        rating, comment))
         cursor.connection.commit()
         cursor.connection.close()
 
@@ -127,6 +161,25 @@ class Database:
             VALUES (?, ?)
         """
         cursor.execute(new_usr_cmd, (user.username, user.email))
+        cursor.connection.commit()
+        cursor.connection.close()
+        self.users_cache.append(user)
+
+    def update_user(self, user: User):
+        """
+        Update an existing user and their reviews in the DB.
+
+        NB: A username is the unique identifier for a user. Python doesn't
+        let us enforce that username is STATIC locally (thank you Python),
+        but it should be considered such.
+        """
+        cursor = self.startup_new_connection()
+        update_usr_cmd = """
+            UPDATE Users
+            SET email=?
+            WHERE username=?
+        """
+        cursor.execute(update_usr_cmd, (user.email, user.username))
         cursor.connection.commit()
         cursor.connection.close()
 
@@ -151,12 +204,12 @@ class Database:
             WHERE username = ?
         """
         password_data = cursor.execute(get_pwd_cmd, (username,)).fetchone()
+        cursor.connection.close()
         if password_data is None:
             return None
         else:
             return {"password_hash": password_data[0],
                     "password_salt": password_data[1]}
-        cursor.connection.close()
 
     def get_user_by_name(self, username: str):
         """Look up a user in the DB by username.
@@ -169,12 +222,13 @@ class Database:
         WHERE username = ?
         """
         user_data = cursor.execute(usr_lookup_cmd, (username,)).fetchone()
+        cursor.connection.close()
         if user_data is not None:
             usr = User(user_data[0], user_data[1])
+            self.users_cache.append(usr)
             return usr
         else:
             return None
-        cursor.connection.close()
 
     def get_user_by_email(self, email: str):
         """Look up a user in the DB by username.
@@ -187,13 +241,12 @@ class Database:
         WHERE email = ?
         """
         user_data = cursor.execute(usr_lookup_cmd, (email,)).fetchone()
+        cursor.connection.close()
         if user_data is not None:
-            # FIXME
             usr = User(user_data[0], user_data[1])
-            cursor.connection.close()
+            self.users_cache.append(usr)
             return usr
         else:
-            cursor.connection.close()
             return None
 
 # # ======================== Session DB Functions ============================
