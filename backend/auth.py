@@ -21,8 +21,9 @@ class AuthHandler():
         if self.db.get_user_by_name(username) is not None:
             return {"status": "error", "code": "username_already_registered"}
 
-        if self.db.get_user_by_email(email) is not None:
-            return {"status": "error", "code": "email_already_registered"}
+        # TODO reimplement email checking, but with cleaner code
+        # if self.db.get_user_by_email(email) is not None:
+        #     return {"status": "error", "code": "email_already_registered"}
 
         self.db.register_new_user(new_user)
 
