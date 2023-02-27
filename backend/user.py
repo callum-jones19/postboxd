@@ -1,6 +1,5 @@
 from typing import List
 from review import Review
-from frontend.src.game_db import game_exists
 
 class User():
     """
@@ -34,8 +33,8 @@ class User():
         if game_already_reviewed:
             return {"status": "error", "code": "game_already_reviewed"}
 
-        if not game_exists(game_id):
-            return {"status": "error", "code": "invalid_game_id"}
+        # if not game_exists(game_id):
+        #     return {"status": "error", "code": "invalid_game_id"}
 
         review: Review = Review(game_id, rating, comment)
         self.reviews.append(review)
