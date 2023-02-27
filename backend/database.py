@@ -140,14 +140,18 @@ class Database:
                           comment: str):
         """Register a new review in the database"""
         cursor = self.startup_new_connection()
-        new_review_cmd = """
-            INSERT INTO Reviews (username, game_id, rating, comment)
-            VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY
-            UPDATE rating=?, comment=?
+        try_update_review = """
+            UPDATE Reviews
+            SET rating=?, comment=?
+            WHERE username=? AND game_id=?
         """
-        cursor.execute(new_review_cmd, (username, game_id, rating, comment,
-                                        rating, comment))
+        cursor.execute(try_update_review, (rating, comment, username, game_id))
+
+        try_insert_review = """
+            INSERT OR IGNORE INTO Reviews
+            VALUES (?, ?, ?, ?)
+        """
+        cursor.execute(try_insert_review, (username, game_id, rating, comment))
         cursor.connection.commit()
         cursor.connection.close()
 
@@ -215,6 +219,13 @@ class Database:
         """Look up a user in the DB by username.
         Returns None if no user exists
         """
+        # Always take the cached version, if it exists
+        cached_usr = next((user for user in self.users_cache if user.username
+                           == username), None)
+        print("USR CACHE: " + str(self.users_cache))
+        if cached_usr is not None:
+            return cached_usr
+
         cursor = self.startup_new_connection()
         usr_lookup_cmd = """
         SELECT *
@@ -222,32 +233,24 @@ class Database:
         WHERE username = ?
         """
         user_data = cursor.execute(usr_lookup_cmd, (username,)).fetchone()
+        review_lookup_cmd = """
+        SELECT *
+        FROM Reviews
+        WHERE username = ?
+        """
+        review_data = cursor.execute(review_lookup_cmd, (username,)).fetchall()
+        print("REVIEWS: " + str(review_data))
+
         cursor.connection.close()
         if user_data is not None:
             usr = User(user_data[0], user_data[1])
+            for review in review_data:
+                usr.addReview(review[1], review[2], review[3])
             self.users_cache.append(usr)
             return usr
         else:
             return None
 
-    def get_user_by_email(self, email: str):
-        """Look up a user in the DB by username.
-        Returns None if no user exists
-        """
-        cursor = self.startup_new_connection()
-        usr_lookup_cmd = """
-        SELECT *
-        FROM Users
-        WHERE email = ?
-        """
-        user_data = cursor.execute(usr_lookup_cmd, (email,)).fetchone()
-        cursor.connection.close()
-        if user_data is not None:
-            usr = User(user_data[0], user_data[1])
-            self.users_cache.append(usr)
-            return usr
-        else:
-            return None
 
 # # ======================== Session DB Functions ============================
 
